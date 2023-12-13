@@ -1,0 +1,96 @@
+name: Docker Image CI (Manually)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: MrSquaare/ssh-setup-action@v3
+        with:
+          host: ${{ secrets.SSH_ARM64_RUNNER }}
+          private-key: ${{ secrets.SSH_PRIVATE_KEY_ARM64_RUNNER }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          endpoint: ${{ secrets.AMD64_RUNNER_ENDPOINT }}
+          append: |
+            - endpoint: ${{ secrets.ARM64_RUNNER_ENDPOINT }}
+              platforms: linux/arm64
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Checkout Planka from NavyStack
+        uses: actions/checkout@v4
+        with:
+          repository: NavyStack/planka
+          path: planka
+          
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: navystack/planka
+          
+      - name: Cache pnpm
+        uses: actions/cache@v3
+        with:
+          path: pnpm-cache
+          key: pnpm-${{ runner.os }}-${{ hashFiles('planka/**/pnpm-lock.yaml') }}
+          
+      - name: inject pnpm-cache into docker
+        uses: reproducible-containers/buildkit-cache-dance@v2.1.3
+        with:
+          cache-source: pnpm-cache
+          cache-target: /root/.pnpm-store
+
+      - name: Cache node-gyp
+        uses: actions/cache@v3
+        with:
+          path: node-gyp-cache
+          key: gyp-${{ runner.os }}-${{ hashFiles('planka/**/pnpm-lock.yaml') }}
+          
+      - name: inject node-gyp-cache into docker
+        uses: reproducible-containers/buildkit-cache-dance@v2.1.3
+        with:
+          cache-source: node-gyp-cache
+          cache-target: /root/.cache/node-gyp
+          
+          
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./planka/
+          file: ./planka/Dockerfile
+          push: true
+          tags: |
+            navystack/planka:latest
+            navystack/planka:1
+            navystack/planka:1.15
+            navystack/planka:1.15.2
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./planka/
+          file: ./planka/debian.Dockerfile
+          push: true
+          tags: |
+            navystack/planka:bookworm
+            navystack/planka:dev
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
