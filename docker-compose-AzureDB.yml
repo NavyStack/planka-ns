@@ -16,16 +16,16 @@ services:
       - user-avatars:/app/public/user-avatars
       - project-background-images:/app/public/project-background-images
       - attachments:/app/private/attachments
+      - ./etc/TLS/DigiCertGlobalRootCA.crt.pem:/app/public/DigiCertGlobalRootCA.crt.pem
     ports:
       - 3000:1337
     environment:
       - BASE_URL=http://localhost:3000
-      - DATABASE_URL=postgresql://postgres@postgres/planka
+      - DATABASE_URL=postgresql://postgres@my-server.postgres.database.azure.com/planka?ssl=true&sslmode=require&sslrootcert=/app/public/DigiCertGlobalRootCA.crt.pem
       - SECRET_KEY=notsecretkey
       - TRUST_PROXY=0
 
       # - TOKEN_EXPIRES_IN=365 # In days
-
       # related: https://github.com/knex/knex/issues/2354
       # As knex does not pass query parameters from the connection string we
       # have to use environment variables in order to pass the desired values, e.g.
@@ -47,20 +47,7 @@ services:
       # - OIDC_ROLES_ATTRIBUTE=groups
       # - OIDC_IGNORE_ROLES=true
 
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:16-bullseye
-    restart: unless-stopped
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=planka
-      - POSTGRES_HOST_AUTH_METHOD=trust
-
 volumes:
   user-avatars:
   project-background-images:
   attachments:
-  db-data:

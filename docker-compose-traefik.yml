@@ -16,10 +16,9 @@ services:
       - user-avatars:/app/public/user-avatars
       - project-background-images:/app/public/project-background-images
       - attachments:/app/private/attachments
-    ports:
-      - 3000:1337
+
     environment:
-      - BASE_URL=http://localhost:3000
+      - BASE_URL=https://planka.navystack.com # 수정 (1) https:// 부분 꼭 들어가야합니다.
       - DATABASE_URL=postgresql://postgres@postgres/planka
       - SECRET_KEY=notsecretkey
       - TRUST_PROXY=0
@@ -34,10 +33,10 @@ services:
       # Configure knex to accept SSL certificates
       # - KNEX_REJECT_UNAUTHORIZED_SSL_CERTIFICATE=false
 
-      # - DEFAULT_ADMIN_EMAIL=demo@demo.demo # Do not remove if you want to prevent this user from being edited/deleted
-      # - DEFAULT_ADMIN_PASSWORD=demo
-      # - DEFAULT_ADMIN_NAME=Demo
-      # - DEFAULT_ADMIN_USERNAME=demo
+      - DEFAULT_ADMIN_EMAIL=demo@demo.demo # Do not remove if you want to prevent this user from being edited/deleted
+      - DEFAULT_ADMIN_PASSWORD=demo
+      - DEFAULT_ADMIN_NAME=Demo
+      - DEFAULT_ADMIN_USERNAME=demo
 
       # - OIDC_ISSUER=
       # - OIDC_CLIENT_ID=
@@ -50,17 +49,40 @@ services:
     depends_on:
       - postgres
 
+    networks:
+      - traefik-network
+      - internal
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.planka-srv.loadbalancer.server.port=1337"
+      - "traefik.http.routers.planka-fvoci.rule=Host(`planka.navystack.com`)" # 수정 (1)과 같이 도메인을 수정 (https:// 제외)
+      - "traefik.http.routers.planka-fvoci.entrypoints=websecure"
+      - "traefik.http.routers.planka-fvoci.tls=true"
+      - "traefik.http.routers.planka-fvoci.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.planka-fvoci.service=planka-srv"
+      - "traefik.http.routers.planka-fvoci.middlewares=www-to-Root@file, security-headers@file"
+
   postgres:
     image: postgres:16-bullseye
     restart: unless-stopped
     volumes:
       - db-data:/var/lib/postgresql/data
+
     environment:
       - POSTGRES_DB=planka
       - POSTGRES_HOST_AUTH_METHOD=trust
+
+    networks:
+      - internal
 
 volumes:
   user-avatars:
   project-background-images:
   attachments:
   db-data:
+
+networks:
+  traefik-network:
+    external: true
+  internal:

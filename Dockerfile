@@ -1,25 +1,55 @@
-FROM amazonlinux:2023.2.20231113.0 AS final
-ARG PLANKA_VERSION=v1.15.0
+FROM node:lts-bookworm AS korean-patcher
 
-RUN dnf -y install \
-    nodejs unzip && \
-    mkdir -p /var/www/planka/ && \
-    cd /var/www/planka && \
-    curl -fsSL https://github.com/plankanban/planka/releases/download/${PLANKA_VERSION}/planka-prebuild-${PLANKA_VERSION}.zip -o planka-prebuild.zip && \
-    unzip planka-prebuild.zip -d /var/www/ && \
-    rm planka-prebuild.zip && \
-    npm install && \
-    mv .env.sample .env && \
-    dnf -y remove \
-        unzip \
-    && \
-        dnf clean all && \
-        dnf autoremove
+WORKDIR /opt/build-stage
+RUN git clone --recurse-submodules -j8 https://github.com/NavyStack/planka.git
 
-VOLUME /var/www/planka/public/user-avatars
-VOLUME /var/www/planka/public/project-background-images
-VOLUME /var/www/planka/private/attachments
-WORKDIR /var/www/planka/
+FROM node:lts-bookworm as server-dependencies
+
+WORKDIR /app
+
+COPY --from=korean-patcher /opt/build-stage/planka/server/package.json /opt/build-stage/planka/server/package-lock.json /app/
+
+RUN npm install npm@latest --global \
+  && npm install pnpm --global \
+  && pnpm import \
+  && pnpm install --prod
+
+FROM node:lts-bookworm AS client
+
+WORKDIR /app
+
+COPY --from=korean-patcher /opt/build-stage/planka/client/package.json /opt/build-stage/planka/client/package-lock.json /app/
+
+RUN npm install npm@latest --global \
+  && npm install pnpm --global \
+  && pnpm import \
+  && pnpm install --prod
+
+COPY --from=korean-patcher /opt/build-stage/planka/client /app/
+
+RUN DISABLE_ESLINT_PLUGIN=true npm run build
+
+RUN wget --no-check-certificate https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem -P /app/build/
+RUN chmod 600 /app/build/DigiCertGlobalRootCA.crt.pem
+
+FROM node:lts-bookworm-slim AS FINAL
+
+USER node
+WORKDIR /app
+
+COPY --from=korean-patcher --chown=node:node /opt/build-stage/planka/start.sh /app/
+COPY --from=korean-patcher --chown=node:node /opt/build-stage/planka/server /app/
+
+RUN mv .env.sample .env
+
+COPY --from=server-dependencies --chown=node:node /app/node_modules node_modules
+
+COPY --from=client --chown=node:node /app/build public
+COPY --from=client --chown=node:node /app/build/index.html views/index.ejs
+
+VOLUME /app/public/user-avatars
+VOLUME /app/public/project-background-images
+VOLUME /app/private/attachments
 
 EXPOSE 1337
 
