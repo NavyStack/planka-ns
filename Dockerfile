@@ -41,7 +41,9 @@ COPY --from=client --chown=$user:$user /app/build/index.html views/index.ejs
 
 FROM node:lts-bookworm-slim AS FINAL
 ARG user=planka
-RUN useradd --create-home --shell /bin/bash $user
+ENV NODE_ENV=production
+RUN useradd --create-home --shell /bin/bash $user \
+    && ln -sf /dev/stdout /app/logs/planka.log
 USER $user
 WORKDIR /app
 COPY --from=layer-cutter --chown=$user:$user /app/ /app/
