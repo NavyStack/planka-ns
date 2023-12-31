@@ -49,5 +49,6 @@ COPY --from=layer-cutter /usr/local/bin/docker-entrypoint.sh /usr/local/bin/tini
 VOLUME /app/public/user-avatars
 VOLUME /app/public/project-background-images
 VOLUME /app/private/attachments
+EXPOSE 1337/tcp
 ENTRYPOINT ["tini", "--"]
 CMD ["docker-entrypoint.sh"]
