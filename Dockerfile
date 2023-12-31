@@ -34,7 +34,10 @@ COPY --from=bedrock --chown=$user:$user /opt/build-stage/planka/start.sh /app/
 COPY --from=bedrock --chown=$user:$user /opt/build-stage/planka/server /app/
 COPY --from=bedrock --chown=$user:$user /usr/local/bin/tini /usr/local/bin/tini
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN mv .env.sample .env
+RUN mv .env.sample .env  \
+    && mkdir -p /app/logs/ \
+    && touch /app/logs/planka.log \
+    && chown -R $user:$user /app/
 COPY --from=server --chown=$user:$user /app/node_modules node_modules
 COPY --from=client --chown=$user:$user /app/build public
 COPY --from=client --chown=$user:$user /app/build/index.html views/index.ejs
