@@ -29,7 +29,7 @@ jobs:
         with:
           images: |
             navystack/planka
-            ghcr.io/navystack/planka
+            ghcr.io/navystack/planka-ns
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
