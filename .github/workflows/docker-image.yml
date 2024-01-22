@@ -94,7 +94,7 @@ jobs:
           file: Dockerfile
           tags: |
             ${{ steps.meta.outputs.tags }}
-            auto-${{ env.CURRENT_DATE_KST }}
+            navystack/planka-auto-${{ env.CURRENT_DATE_KST }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: ${{ github.event_name != 'pull_request' }}
