@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Set up SSH
         uses: MrSquaare/ssh-setup-action@v3
@@ -31,7 +31,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Checkout Planka from NavyStack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: NavyStack/planka
           path: planka
