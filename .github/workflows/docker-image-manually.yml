@@ -49,7 +49,7 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('planka/**/pnpm-lock.yaml') }}
           
       - name: inject pnpm-cache into docker
-        uses: reproducible-containers/buildkit-cache-dance@v2.1.3
+        uses: reproducible-containers/buildkit-cache-dance@v3.4.0
         with:
           cache-source: pnpm-cache
           cache-target: /root/.pnpm-store
@@ -61,7 +61,7 @@ jobs:
           key: gyp-${{ runner.os }}-${{ hashFiles('planka/**/pnpm-lock.yaml') }}
           
       - name: inject node-gyp-cache into docker
-        uses: reproducible-containers/buildkit-cache-dance@v2.1.3
+        uses: reproducible-containers/buildkit-cache-dance@v3.4.0
         with:
           cache-source: node-gyp-cache
           cache-target: /root/.cache/node-gyp
