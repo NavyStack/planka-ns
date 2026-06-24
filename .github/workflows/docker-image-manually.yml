@@ -43,7 +43,7 @@ jobs:
           images: navystack/planka
           
       - name: Cache pnpm
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: pnpm-cache
           key: pnpm-${{ runner.os }}-${{ hashFiles('planka/**/pnpm-lock.yaml') }}
@@ -55,7 +55,7 @@ jobs:
           cache-target: /root/.pnpm-store
 
       - name: Cache node-gyp
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: node-gyp-cache
           key: gyp-${{ runner.os }}-${{ hashFiles('planka/**/pnpm-lock.yaml') }}
